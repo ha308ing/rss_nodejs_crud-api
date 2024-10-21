@@ -1,0 +1,254 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/OAI/OpenAPI-Specification/refs/heads/main/schemas/v3.1/schema.yaml
+
+openapi: "3.1.0"
+info:
+  title: Users API
+  description: CRUD API for users collection stored in memory
+  version: "1.0"
+servers:
+  - url: http://localhost:{port}/api
+    description: Default server
+    variables:
+      port:
+        default: "4000"
+paths:
+  /users:
+    get:
+      summary: Get all users
+      description: Get all stored users array, if no users - empty array
+      operationId: list_users
+      responses:
+        "200":
+          $ref: "#/components/responses/UsersObject"
+    post:
+      summary: Create user
+      description: To create record about new user and store it in database
+      operationId: create_user
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/UserPrototype"
+      responses:
+        "201":
+          $ref: "#/components/responses/CreateUserSuccess"
+        "400":
+          $ref: "#/components/responses/CreateUserFail"
+  /users/{user_id}:
+    parameters:
+      - name: user_id
+        required: true
+        in: path
+        description: Username id to get info about, must be uuid
+        schema:
+          $ref: "#/components/schemas/Id"
+    get:
+      summary: Get user info
+      description: Get user info by id, id must be uuid
+      operationId: get_user
+      responses:
+        "200":
+          $ref: "#/components/responses/User"
+        "400":
+          $ref: "#/components/responses/InvalidId"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+    put:
+      summary: Update user
+      description: Update user record entirely, id must be uuid
+      operationId: replace_user
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              $ref: "#/components/schemas/UserPrototype"
+      responses:
+        "200":
+          $ref: "#/components/responses/User"
+        "400":
+          $ref: "#/components/responses/InvalidId"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+    delete:
+      summary: Delete user
+      description: To delete existing user from database by id, id must be uuid
+      operationId: delete_user
+      responses:
+        "204":
+          $ref: "#/components/responses/DeleteUserSuccess"
+        "400":
+          $ref: "#/components/responses/InvalidId"
+        "404":
+          $ref: "#/components/responses/UserNotFound"
+components:
+  schemas:
+    Id:
+      description: User id
+      type: string
+      pattern: "^[0-9a-fA-F]{8}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{4}\\b-[0-9a-fA-F]{12}$"
+      minLength: 36
+      maxLength: 36
+      format: uuid
+    Username:
+      description: User name
+      type: string
+      pattern: "^[a-zA-Zа-яА-Я ][a-zA-Zа-яА-Я ]{2,254}$"
+      minLength: 1
+      maxLength: 255
+    Hobby:
+      description: Hobby
+      type: string
+      pattern: "^[a-zA-Zа-яА-Я ][a-zA-Zа-яА-Я ]{2,254}$"
+      minLength: 3
+      maxLength: 255
+    Hobbies:
+      description: Array of hobbies
+      type: array
+      minItems: 0
+      maxItems: 255
+      items:
+        $ref: "#/components/schemas/Hobby"
+    Age:
+      description: User age
+      type: number
+    User:
+      description: User
+      type: object
+      required:
+        - username
+        - age
+        - hobbies
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        username:
+          $ref: "#/components/schemas/Username"
+        age:
+          $ref: "#/components/schemas/Age"
+        hobbies:
+          $ref: "#/components/schemas/Hobbies"
+    UserPrototype:
+      type: object
+      required:
+        - username
+        - age
+        - hobbies
+      properties:
+        username:
+          $ref: "#/components/schemas/Username"
+        age:
+          $ref: "#/components/schemas/Age"
+        hobbies:
+          $ref: "#/components/schemas/Hobbies"
+    UserObject:
+      description: User object
+      required:
+        - user
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+    UsersArray:
+      description: Array of users
+      type: array
+      minItems: 0
+      maxItems: 1023
+      items:
+        $ref: "#/components/schemas/User"
+    UsersObject:
+      description: Users object with users key and array of users as value
+      type: object
+      required:
+        - users
+      properties:
+        users:
+          $ref: "#/components/schemas/UsersArray"
+    # UserNotFound:
+    #   description: No such id
+    #   type: string
+    #   pattern: "^.{1,255}$"
+    #   minLength: 1
+    #   maxLength: 255
+    # GenericErrorM:
+    #   description: Generic error model
+    #   type: object
+    #   required:
+    #     - message
+    #   properties:
+    #     message: string
+    GenericString:
+      description: Generic string
+      type: string
+      pattern: "^.{1,255}$"
+      minLength: 1
+      maxLength: 255
+    Error:
+      description: An error response entry
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          $ref: "#/components/schemas/GenericString"
+  responses:
+    UsersObject:
+      description: All users
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UsersObject"
+          example:
+            users:
+              - id: "09ef729b-43d5-4a1f-97dd-86c80187b468"
+                username: "Peter"
+                age: 27
+                hobbies: ["hockey", "football"]
+              - id: "09ef729b-43e5-4a1f-97dd-86c80187b468"
+                username: "Tiana"
+                age: 25
+                hobbies: []
+    User:
+      description: User info
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UserObject"
+          example:
+            user:
+              id: "09ef729b-43d5-4a1f-97dd-86c80187b468"
+              username: "Peter"
+              age: 27
+              hobbies: ["hockey", "football"]
+    InvalidId:
+      description: Provided invalid userId
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    UserNotFound:
+      description: No user with provided id found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    CreateUserSuccess:
+      description: User created
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UserObject"
+          example:
+            user:
+              id: "09ef729b-43d5-4a1f-97dd-86c80187b468"
+              username: "Peter"
+              age: 27
+              hobbies: ["hockey", "football"]
+    CreateUserFail:
+      description: User not created, if request body does not contain required fields
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    DeleteUserSuccess:
+      description: User delete from database
